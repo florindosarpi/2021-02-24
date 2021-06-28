@@ -5,8 +5,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
 import it.polito.tdp.PremierLeague.model.Action;
+import it.polito.tdp.PremierLeague.model.Arco;
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Player;
 import it.polito.tdp.PremierLeague.model.Team;
@@ -109,6 +114,97 @@ public class PremierLeagueDAO {
 			e.printStackTrace();
 			return null;
 		}
+	}
+	
+	public List<Player> getVertici(Match m, Map<Integer, Player> idMap){
+		String sql = "SELECT p.PlayerID, p.Name "
+				+ "FROM players p, actions a, matches m "
+				+ "WHERE m.MatchID = ? AND m.MatchID=a.MatchID AND p.PlayerID = a.PlayerID "
+				+ "ORDER BY p.Name";
+		List<Player> result = new LinkedList<Player>();
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, m.getMatchID());
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				Player player = new Player(res.getInt("PlayerID"), res.getString("Name"));
+				idMap.put(player.getPlayerID(), player);
+				result.add(player);
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public Map<Player, Arco> getArchi(Match m, Map<Integer, Player> idMap){
+		Map<Player, Arco> result = new HashMap<>();
+		
+		String sql = "SELECT p.PlayerID, p.Name, a.TotalSuccessfulPassesAll, a.Assists, a.TimePlayed, a.TeamID "
+				+ "FROM players p, actions a, matches m "
+				+ "WHERE m.MatchID = ? AND m.MatchID=a.MatchID AND p.PlayerID = a.PlayerID "
+				+ "ORDER BY p.Name";
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, m.getMatchID());
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+				
+				float passaggi = (float) (res.getInt("TotalSuccessfulPassesAll"));
+				float assist = (float) (res.getInt("Assists"));
+				float tempoGiocato = (float) (res.getInt("TimePlayed"));
+				
+				// System.out.println("passaggi: " +passaggi +" assist " +assist + " tempo: " +tempoGiocato);
+				
+				float efficienza = (float) ((passaggi + assist)/tempoGiocato) ;
+				// System.out.println("Giocatore " +res.getInt("PlayerID") + " Efficienza: " +efficienza);
+				Integer team = res.getInt("TeamID");
+				
+				
+				Arco a = new Arco(idMap.get(res.getInt("PlayerID")), efficienza, team);
+				result.put(idMap.get(res.getInt("PlayerID")) ,a);
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+		
+	}
+	
+	public Integer getTeamByPlayer(Integer pID) {
+		String sql="SELECT DISTINCT a.TeamID "
+				+ "FROM players p, actions a "
+				+ "WHERE p.PlayerID = a.PlayerID AND p.PlayerID = ?";
+		Connection conn = DBConnect.getConnection();
+		Integer result = 0;
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, pID);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				result = res.getInt("TeamID");
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+		
 	}
 	
 }

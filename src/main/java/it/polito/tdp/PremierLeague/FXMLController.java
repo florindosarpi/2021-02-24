@@ -10,6 +10,8 @@ import java.util.ResourceBundle;
 
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Model;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -38,6 +40,7 @@ public class FXMLController {
 
     @FXML // fx:id="cmbMatch"
     private ComboBox<Match> cmbMatch; // Value injected by FXMLLoader
+    private ObservableList<Match> partite;
 
     @FXML // fx:id="txtN"
     private TextField txtN; // Value injected by FXMLLoader
@@ -48,15 +51,24 @@ public class FXMLController {
     @FXML
     void doCreaGrafo(ActionEvent event) {
     	
+    	Match m = this.cmbMatch.getValue();
+    	this.txtResult.appendText(this.model.creaGrafo(m));
+    	
     }
 
     @FXML
     void doGiocatoreMigliore(ActionEvent event) {    	
     	
+    	txtResult.setText(this.model.getBestPlayer());
+    	
     }
     
     @FXML
     void doSimula(ActionEvent event) {
+    	
+    	Integer N = Integer.parseInt(txtN.getText());
+    	Match partita = cmbMatch.getValue();
+    	txtResult.setText(this.model.risultatoSim(partita, N));
 
     }
 
@@ -73,5 +85,7 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	partite = FXCollections.observableList(model.getAllMatches());
+    	cmbMatch.setItems(partite);
     }
 }
